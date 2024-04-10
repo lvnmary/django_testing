@@ -1,35 +1,42 @@
+import pytest
+import random
 from http import HTTPStatus
 
 from django.urls import reverse
 from pytest_django.asserts import assertFormError, assertRedirects
-import pytest
 
-from news.forms import WARNING
+from news.forms import BAD_WORDS, WARNING
 from news.models import Comment
+
+FORM_DATA = {
+    'text': 'Новый текст',
+}
+BAD_WORDS_DATA = {
+    'text': f'Какой-то текст, {random.choice(BAD_WORDS)}, еще текст'
+}
 
 
 def test_user_can_create_note(
     author_client,
     author,
-    form_data,
-    news_id_for_args,
     news
 ):
-    url = reverse('news:detail', args=(news_id_for_args))
-    response = author_client.post(url, data=form_data)
+    initial_comment_count = Comment.objects.count()
+    url = reverse('news:detail', args=(news.id,))
+    response = author_client.post(url, data=FORM_DATA)
     assertRedirects(response, f'{url}#comments')
-    assert Comment.objects.count() == 1
-    new_comment = Comment.objects.get()
-    assert new_comment.text == form_data['text']
+    assert Comment.objects.count() == initial_comment_count + 1
+    new_comment = Comment.objects.latest('id')
+    assert new_comment.text == FORM_DATA['text']
     assert new_comment.news == news
     assert new_comment.author == author
 
 
 @pytest.mark.django_db
-def test_anonymous_user_cant_create_note(client, form_data, news_id_for_args):
+def test_anonymous_user_cant_create_note(client, news):
     count = Comment.objects.count()
-    url = reverse('news:detail', args=(news_id_for_args))
-    response = client.post(url, data=form_data)
+    url = reverse('news:detail', args=(news.id,))
+    response = client.post(url, data=FORM_DATA)
     login_url = reverse('users:login')
     expected_url = f'{login_url}?next={url}'
     assertRedirects(response, expected_url)
@@ -38,35 +45,33 @@ def test_anonymous_user_cant_create_note(client, form_data, news_id_for_args):
 
 def test_user_cant_use_bad_words(
     author_client,
-    news_id_for_args,
-    bad_words_data
+    news
 ):
     count = Comment.objects.count()
-    url = reverse('news:detail', args=news_id_for_args)
-    response = author_client.post(url, data=bad_words_data)
+    url = reverse('news:detail', args=(news.id,))
+    response = author_client.post(url, data=BAD_WORDS_DATA)
     assertFormError(response, 'form', 'text', errors=WARNING)
     assert Comment.objects.count() == count
 
 
 def test_author_can_edit_comment(
-    author_client, form_data,
+    author_client,
     comment,
     edit_url,
     url_to_comments
 ):
-    response = author_client.post(edit_url, data=form_data)
+    response = author_client.post(edit_url, data=FORM_DATA)
     assertRedirects(response, url_to_comments)
     comment.refresh_from_db()
-    assert comment.text == form_data['text']
+    assert comment.text == FORM_DATA['text']
 
 
 def test_other_user_cant_edit_comment(
     admin_client,
-    form_data,
     comment,
     edit_url
 ):
-    response = admin_client.post(edit_url, data=form_data)
+    response = admin_client.post(edit_url, data=FORM_DATA)
     assert response.status_code == HTTPStatus.NOT_FOUND
     comment_from_db = Comment.objects.get(id=comment.id)
     assert comment.text == comment_from_db.text

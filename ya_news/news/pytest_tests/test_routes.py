@@ -1,23 +1,18 @@
+import pytest
 from http import HTTPStatus
 
 from django.urls import reverse
-import pytest
+
 from pytest_django.asserts import assertRedirects
 
 
-@pytest.mark.django_db('news')
+@pytest.mark.django_db
 @pytest.mark.parametrize(
-    'name, args',
-    (
-        ('news:home', None),
-        ('news:detail', pytest.lazy_fixture('news_id_for_args')),
-        ('users:login', None),
-        ('users:logout', None),
-        ('users:signup', None),
-    ),
+    'name',
+    ('news:home', 'users:login', 'users:logout', 'users:signup')
 )
-def test_pages_availability_for_anonymous_user(client, name, args):
-    url = reverse(name, args=args)
+def test_pages_availability_for_anonymous_user(client, name):
+    url = reverse(name)
     response = client.get(url)
     assert response.status_code == HTTPStatus.OK
 
@@ -53,15 +48,18 @@ def test_pages_availability_for_different_users(
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'name, args',
+    'name, news_object',
     (
-        ('news:edit', pytest.lazy_fixture('comment_id_for_args')),
-        ('news:delete', pytest.lazy_fixture('comment_id_for_args')),
+        ('news:edit', pytest.lazy_fixture('news')),
+        ('news:delete', pytest.lazy_fixture('news')),
     ),
 )
-def test_redirects(client, name, args):
+def test_redirects(client, name, news_object):
     login_url = reverse('users:login')
-    url = reverse(name, args=args)
+    if news_object is not None:
+        url = reverse(name, args=(news_object.id,))
+    else:
+        url = reverse(name)
     expected_url = f'{login_url}?next={url}'
     response = client.get(url)
     assertRedirects(response, expected_url)

@@ -1,11 +1,10 @@
+import pytest
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
-import pytest
 
-from news.forms import BAD_WORDS
 from news.models import Comment, News
 
 
@@ -35,17 +34,7 @@ def comment(news, author):
 
 
 @pytest.fixture
-def news_id_for_args(news):
-    return news.id,
-
-
-@pytest.fixture
-def comment_id_for_args(comment):
-    return comment.id,
-
-
-@pytest.fixture
-def comment_created(news, author):
+def comments(news, author):
     now = timezone.now()
     for index in range(2):
         comment = Comment.objects.create(
@@ -69,34 +58,20 @@ def news_list():
         )
         for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     ]
-    return News.objects.bulk_create(all_news)
+    News.objects.bulk_create(all_news)
 
 
 @pytest.fixture
-def form_data():
-    return {
-        'text': 'Новый текст',
-    }
-
-
-@pytest.fixture
-def bad_words_data():
-    return {
-        'text': f'Какой-то текст, {BAD_WORDS[0]}, еще текст'
-    }
-
-
-@pytest.fixture
-def url_to_comments(news_id_for_args):
-    news_url = reverse('news:detail', args=news_id_for_args)
+def url_to_comments(news):
+    news_url = reverse('news:detail', args=(news.id,))
     return news_url + '#comments'
 
 
 @pytest.fixture
-def edit_url(comment_id_for_args):
-    return reverse('news:edit', args=comment_id_for_args)
+def edit_url(comment):
+    return reverse('news:edit', args=(comment.id,))
 
 
 @pytest.fixture
-def delete_url(comment_id_for_args):
-    return reverse('news:delete', args=comment_id_for_args)
+def delete_url(comment):
+    return reverse('news:delete', args=(comment.id,))
