@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from notes.tests.constants import (
@@ -9,8 +8,6 @@ from notes.tests.constants import (
     LOGIN_URL, LOGOUT_URL, SIGNUP_URL,
     SUCCESS_URL, SetUpTestData
 )
-
-User = get_user_model()
 
 
 class TestRoutes(SetUpTestData):

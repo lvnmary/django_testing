@@ -1,12 +1,8 @@
-from django.contrib.auth import get_user_model
-
 from django.urls import reverse
 
 from notes.tests.constants import (
     ADD_URL, EDIT_URL, LIST_URL, SetUpTestData
 )
-
-User = get_user_model()
 
 
 class TestHomePage(SetUpTestData):
