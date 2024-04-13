@@ -1,6 +1,6 @@
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
@@ -44,7 +44,6 @@ def comments(news, author):
         )
         comment.created = now + timedelta(days=index)
         comment.save()
-    return news
 
 
 @pytest.fixture
@@ -75,3 +74,13 @@ def edit_url(comment):
 @pytest.fixture
 def delete_url(comment):
     return reverse('news:delete', args=(comment.id,))
+
+
+@pytest.fixture
+def news_detail_url(news):
+    return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def news_home_url():
+    return reverse('news:home')

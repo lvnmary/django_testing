@@ -1,21 +1,9 @@
 import pytest
-
 from django.conf import settings
-from django.urls import reverse
 
 from news.forms import CommentForm
 
 FORM_NAME = 'form'
-
-
-@pytest.fixture
-def news_detail_url(news):
-    return reverse('news:detail', args=(news.id,))
-
-
-@pytest.fixture
-def news_home_url():
-    return reverse('news:home')
 
 
 @pytest.mark.django_db('news')
